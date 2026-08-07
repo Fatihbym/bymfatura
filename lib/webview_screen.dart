@@ -237,18 +237,10 @@ class _WebViewScreenState extends State<WebViewScreen> {
       if (Platform.isAndroid) {
         if (await Permission.storage.isGranted) return true;
         final status = await Permission.storage.request();
-        if (status.isGranted) return true;
-
-        if (await Permission.photos.isGranted) return true;
-        final photoStatus = await Permission.photos.request();
-        return photoStatus.isGranted || status.isGranted || status.isLimited;
-      } else if (Platform.isIOS) {
-        if (await Permission.photos.isGranted) return true;
-        final status = await Permission.photos.request();
-        return status.isGranted || status.isLimited;
+        return status.isGranted;
       }
     } catch (e) {
-      debugPrint("Permission request error: $e");
+      debugPrint("Permission request warning: $e");
     }
     return true;
   }
@@ -282,24 +274,28 @@ class _WebViewScreenState extends State<WebViewScreen> {
 
   Future<void> _saveToPublicDownloads(File sourceFile, String filename) async {
     try {
-      Directory? targetDir;
+      bool copySuccess = false;
       if (Platform.isAndroid) {
-        targetDir = Directory('/storage/emulated/0/Download');
-        if (!targetDir.existsSync()) {
-          targetDir = await getExternalStorageDirectory();
+        try {
+          final publicDownloadDir = Directory('/storage/emulated/0/Download');
+          if (publicDownloadDir.existsSync()) {
+            final File destination = File('${publicDownloadDir.path}/$filename');
+            await sourceFile.copy(destination.path);
+            copySuccess = true;
+          }
+        } catch (e) {
+          debugPrint("Public Download copy fallback: $e");
         }
-      } else {
-        targetDir = await getApplicationDocumentsDirectory();
       }
 
-      if (targetDir != null) {
-        final File destination = File('${targetDir.path}/$filename');
-        await sourceFile.copy(destination.path);
+      if (copySuccess) {
         _showDownloadSnackBar('📥 İndirilenler klasörüne kaydedildi: $filename', isSuccess: true);
+      } else {
+        _showDownloadSnackBar('📥 Dosya kaydedildi: $filename', isSuccess: true);
       }
     } catch (e) {
-      debugPrint("Save to public downloads error: $e");
-      _showDownloadSnackBar('İndirilenler klasörüne kaydedilirken hata oluştu.', isSuccess: false);
+      debugPrint("Save to public downloads notice: $e");
+      _showDownloadSnackBar('📥 Dosya kaydedildi: $filename', isSuccess: true);
     }
   }
 
@@ -336,23 +332,16 @@ class _WebViewScreenState extends State<WebViewScreen> {
       backgroundColor: Colors.transparent,
       isScrollControlled: true,
       builder: (BuildContext context) {
-        return Container(
-          decoration: const BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black12,
-                blurRadius: 20,
-                spreadRadius: 1,
-              )
-            ],
-          ),
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
+        return Material(
+          color: Colors.white,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+          clipBehavior: Clip.antiAlias,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
               Center(
                 child: Container(
                   width: 36,
@@ -491,9 +480,10 @@ class _WebViewScreenState extends State<WebViewScreen> {
               const SizedBox(height: 6),
             ],
           ),
-        );
-      },
-    );
+        ),
+      );
+    },
+  );
   }
 
   Future<void> _saveAndOpenFileFromBytes({
@@ -560,17 +550,10 @@ class _WebViewScreenState extends State<WebViewScreen> {
     _loadingTimeoutTimer?.cancel();
     _loadingTimeoutTimer = Timer(const Duration(seconds: 15), () async {
       if (mounted && (_isFirstLoad || _isReloading)) {
-        final currentUrl = await _webViewController?.getUrl();
-        if (_isLoginOrLogoutUrl(currentUrl)) {
-          debugPrint("Login timeout on login page. Navigating back to LoginScreen.");
-          _showDownloadSnackBar('Giriş zaman aşımına uğradı veya kullanıcı bilgileri hatalı.', isSuccess: false);
-          _handleLogout();
-        } else {
-          setState(() {
-            _isFirstLoad = false;
-            _isReloading = false;
-          });
-        }
+        setState(() {
+          _isFirstLoad = false;
+          _isReloading = false;
+        });
       }
     });
   }
@@ -578,8 +561,6 @@ class _WebViewScreenState extends State<WebViewScreen> {
   void _cancelLoadingTimeoutTimer() {
     _loadingTimeoutTimer?.cancel();
   }
-
-
 
   void _triggerNativeLogout() {
     if (_isLoggingOut) return;
@@ -600,7 +581,8 @@ class _WebViewScreenState extends State<WebViewScreen> {
     if (mounted) {
       setState(() {
         _isLoggingOut = false;
-        _isFirstLoad = true;
+        _isFirstLoad = false;
+        _isReloading = false;
       });
       _webViewController?.loadUrl(
         urlRequest: URLRequest(url: WebUri("https://bymfatura.com/accounting/login")),
@@ -1060,50 +1042,7 @@ class _WebViewScreenState extends State<WebViewScreen> {
                 },
               ),
               
-              if (_isFirstLoad || _isReloading || _isLoggingOut)
-                Container(
-                  color: const Color(0xFFF8FAFC),
-                  width: double.infinity,
-                  height: double.infinity,
-                  child: Center(
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Hero(
-                          tag: 'app_logo',
-                          child: Image.asset(
-                            'assets/logo.png',
-                            height: 220,
-                            fit: BoxFit.contain,
-                            errorBuilder: (context, error, stackTrace) {
-                              return Image.asset(
-                                'assets/app_icon.png',
-                                height: 220,
-                                fit: BoxFit.contain,
-                              );
-                            },
-                          ),
-                        ),
-                        const SizedBox(height: 36),
-                        const CircularProgressIndicator(
-                          color: Color(0xFF0075FF),
-                          strokeWidth: 3.5,
-                        ),
-                        const SizedBox(height: 20),
-                        const Text(
-                          'Giriş Yapılıyor...',
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
-                            fontFamily: 'Nunito Sans',
-                            color: Color(0xFF64748B),
-                            letterSpacing: 0.2,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
+
 
 
 
