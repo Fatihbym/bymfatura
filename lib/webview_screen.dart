@@ -303,12 +303,33 @@ class _WebViewScreenState extends State<WebViewScreen> {
     }
   }
 
+  String _shortenFileName(String name, {int maxLength = 32}) {
+    final trimmed = name.trim();
+    if (trimmed.length <= maxLength) return trimmed;
+
+    final extIndex = trimmed.lastIndexOf('.');
+    String baseName = trimmed;
+    String ext = '';
+    if (extIndex != -1 && extIndex > trimmed.length - 8) {
+      baseName = trimmed.substring(0, extIndex);
+      ext = trimmed.substring(extIndex);
+    }
+
+    if (baseName.length > 20) {
+      final start = baseName.substring(0, 14);
+      final end = baseName.substring(baseName.length - 7);
+      return '$start...$end$ext';
+    }
+    return trimmed;
+  }
+
   void _showFileDownloadedBottomSheet({
     required File savedFile,
     required String filename,
-    required String iconStr,
   }) {
     if (!mounted) return;
+
+    final String displayName = _shortenFileName(filename);
 
     showModalBottomSheet(
       context: context,
@@ -330,59 +351,41 @@ class _WebViewScreenState extends State<WebViewScreen> {
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
           child: Column(
             mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Container(
-                width: 36,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: const Color(0xFFE2E8F0),
-                  borderRadius: BorderRadius.circular(10),
+              Center(
+                child: Container(
+                  width: 36,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFE2E8F0),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
                 ),
               ),
               const SizedBox(height: 16),
 
-              Row(
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Container(
-                    width: 46,
-                    height: 46,
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFF1F5F9),
-                      borderRadius: BorderRadius.circular(14),
+                  Text(
+                    displayName,
+                    style: const TextStyle(
+                      fontFamily: 'Nunito Sans',
+                      fontSize: 15,
+                      fontWeight: FontWeight.w700,
+                      color: Color(0xFF1E293B),
                     ),
-                    child: Center(
-                      child: Text(
-                        iconStr,
-                        style: const TextStyle(fontSize: 22),
-                      ),
-                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                   ),
-                  const SizedBox(width: 14),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          filename,
-                          style: const TextStyle(
-                            fontFamily: 'Nunito Sans',
-                            fontSize: 15,
-                            fontWeight: FontWeight.w700,
-                            color: Color(0xFF1E293B),
-                          ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                        const SizedBox(height: 2),
-                        const Text(
-                          'Dosya indirildi',
-                          style: TextStyle(
-                            fontFamily: 'Nunito Sans',
-                            fontSize: 12,
-                            color: Color(0xFF64748B),
-                          ),
-                        ),
-                      ],
+                  const SizedBox(height: 2),
+                  const Text(
+                    'Dosya başarıyla indirildi',
+                    style: TextStyle(
+                      fontFamily: 'Nunito Sans',
+                      fontSize: 12,
+                      color: Color(0xFF64748B),
                     ),
                   ),
                 ],
@@ -528,32 +531,10 @@ class _WebViewScreenState extends State<WebViewScreen> {
       // Automatically save copy to public Downloads folder by default as well
       await _saveToPublicDownloads(file, finalFilename);
 
-      final ext = finalFilename.split('.').last.toLowerCase();
-      String iconStr = '📁';
-
-      if (ext == 'pdf') {
-        iconStr = '📄';
-      } else if (ext == 'doc' || ext == 'docx' || ext == 'txt') {
-        iconStr = '📝';
-      } else if (ext == 'ppt' || ext == 'pptx' || ext == 'xlsx' || ext == 'xls' || ext == 'csv') {
-        iconStr = '📊';
-      } else if (ext == 'xml') {
-        iconStr = '📜';
-      } else if (ext == 'zip' || ext == 'rar' || ext == '7z' || ext == 'tar' || ext == 'gz') {
-        iconStr = '📦';
-      } else if (['png', 'jpg', 'jpeg', 'webp', 'svg', 'gif', 'bmp'].contains(ext)) {
-        iconStr = '🖼️';
-      } else if (['mp3', 'wav', 'aac', 'm4a', 'ogg'].contains(ext)) {
-        iconStr = '🎵';
-      } else if (['mp4', 'avi', 'mov', 'mkv'].contains(ext)) {
-        iconStr = '🎥';
-      }
-
       // Open interactive Save & Location Bottom Sheet
       _showFileDownloadedBottomSheet(
         savedFile: file,
         filename: finalFilename,
-        iconStr: iconStr,
       );
     } catch (e) {
       _finishDownloadUI();

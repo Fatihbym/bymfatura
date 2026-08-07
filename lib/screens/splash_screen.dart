@@ -18,14 +18,17 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
   @override
   void initState() {
     super.initState();
-    try {
-      FlutterNativeSplash.remove();
-    } catch (_) {}
     _animController = AnimationController(
       vsync: this,
       duration: const Duration(seconds: 18),
     )..repeat();
-    _checkAutoLogin();
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      try {
+        FlutterNativeSplash.remove();
+      } catch (_) {}
+      _checkAutoLogin();
+    });
   }
 
   @override
@@ -35,7 +38,7 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
   }
 
   Future<void> _checkAutoLogin() async {
-    await Future.delayed(const Duration(milliseconds: 300));
+    await Future.delayed(const Duration(milliseconds: 350));
     if (!mounted) return;
 
     Navigator.of(context).pushReplacement(

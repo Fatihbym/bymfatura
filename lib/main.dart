@@ -8,10 +8,18 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   final deepLinkService = DeepLinkService();
-  await deepLinkService.init();
+  try {
+    await deepLinkService.init().timeout(const Duration(seconds: 2));
+  } catch (e) {
+    debugPrint("DeepLinkService init timeout or error: $e");
+  }
 
   final authService = AuthService();
-  await authService.init();
+  try {
+    await authService.init().timeout(const Duration(seconds: 2));
+  } catch (e) {
+    debugPrint("AuthService init timeout or error: $e");
+  }
 
   SystemChrome.setEnabledSystemUIMode(SystemUiMode.manual, overlays: SystemUiOverlay.values);
 
