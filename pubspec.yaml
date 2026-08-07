@@ -1,0 +1,66 @@
+name: bymfatura
+description: "Bym Fatura Mobile Application"
+publish_to: 'none'
+
+version: 2.0.0+2
+
+environment:
+  sdk: ^3.12.2
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  cupertino_icons: ^1.0.8
+  flutter_native_splash: ^2.4.8
+  connectivity_plus: ^7.2.0
+  flutter_inappwebview: ^6.1.5
+  app_links: ^7.2.1
+  http: ^1.6.0
+  url_launcher: ^6.3.2
+  font_awesome_flutter: ^11.0.0
+  device_info_plus: ^13.2.0
+  shared_preferences: ^2.5.5
+  package_info_plus: ^10.2.0
+  google_fonts: ^8.2.0
+  path_provider: ^2.1.5
+  permission_handler: 11.3.1
+  share_plus: ^13.3.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: any
+  flutter_launcher_icons: ^0.14.4
+
+dependency_overrides:
+  jni: 0.9.3
+  path_provider_android: 2.2.5
+
+flutter:
+  uses-material-design: true
+
+  assets:
+    - assets/
+    - assets/NunitoSans.woff2
+
+  fonts:
+    - family: Nunito Sans
+      fonts:
+        - asset: assets/NunitoSans.woff2
+
+flutter_launcher_icons:
+  android: true
+  ios: true
+  image_path: "assets/app_icon_launcher.png"
+  adaptive_icon_background: "#FFFFFF"
+  adaptive_icon_foreground: "assets/app_icon_foreground.png"
+  remove_alpha_ios: true
+  min_sdk_android: 21
+
+flutter_native_splash:
+  color: "#F8FAFC"
+  color_dark: "#F8FAFC"
+  android: true
+  ios: true
+
