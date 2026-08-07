@@ -42,12 +42,6 @@ flutter:
 
   assets:
     - assets/
-    - assets/NunitoSans.woff2
-
-  fonts:
-    - family: Nunito Sans
-      fonts:
-        - asset: assets/NunitoSans.woff2
 
 flutter_launcher_icons:
   android: true

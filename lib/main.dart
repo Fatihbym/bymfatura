@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'services/deep_link_service.dart';
 import 'services/auth_service.dart';
 import 'screens/splash_screen.dart';
@@ -39,6 +40,7 @@ class MyApp extends StatelessWidget {
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFF80C7EA)),
         useMaterial3: true,
+        textTheme: GoogleFonts.nunitoSansTextTheme(ThemeData.light().textTheme),
       ),
       home: SplashScreen(deepLinkService: deepLinkService),
     );

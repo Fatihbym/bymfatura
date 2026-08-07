@@ -13,6 +13,8 @@ import 'package:http/http.dart' as http;
 import 'dart:collection';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:share_plus/share_plus.dart';
+import 'package:google_fonts/google_fonts.dart';
+import 'package:device_info_plus/device_info_plus.dart';
 
 // Projenizdeki mevcut servisler
 import 'services/deep_link_service.dart';
@@ -38,10 +40,7 @@ class _WebViewScreenState extends State<WebViewScreen> {
   bool _isReloading = false;
   bool _isFirstLoad = true;
   bool _hasInternet = true;
-  bool _hasTimeoutError = false; 
   bool _isLoggingOut = false;
-
-  Timer? _loadingTimeoutTimer;
 
   // File Download UI States
   bool _isDownloading = false;
@@ -136,7 +135,6 @@ class _WebViewScreenState extends State<WebViewScreen> {
 
   @override
   void dispose() {
-    _loadingTimeoutTimer?.cancel();
     _connectivitySubscription.cancel();
     _deepLinkSubscription.cancel();
     super.dispose();
@@ -146,7 +144,6 @@ class _WebViewScreenState extends State<WebViewScreen> {
     if (!mounted) return;
     setState(() {
       _isReloading = true;
-      _hasTimeoutError = false; 
     });
     
     try {
@@ -164,7 +161,7 @@ class _WebViewScreenState extends State<WebViewScreen> {
       SnackBar(
         content: Text(
           message,
-          style: const TextStyle(fontFamily: 'Nunito Sans', fontWeight: FontWeight.w600),
+          style: GoogleFonts.nunitoSans(fontWeight: FontWeight.w600),
         ),
         backgroundColor: isSuccess ? const Color(0xFF0075FF) : Colors.redAccent.shade700,
         duration: const Duration(seconds: 4),
@@ -235,6 +232,10 @@ class _WebViewScreenState extends State<WebViewScreen> {
   Future<bool> _requestStoragePermission() async {
     try {
       if (Platform.isAndroid) {
+        final androidInfo = await DeviceInfoPlugin().androidInfo;
+        if (androidInfo.version.sdkInt >= 33) {
+          return true;
+        }
         if (await Permission.storage.isGranted) return true;
         final status = await Permission.storage.request();
         if (status.isPermanentlyDenied) {
@@ -362,22 +363,20 @@ class _WebViewScreenState extends State<WebViewScreen> {
                 children: [
                   Text(
                     displayName,
-                    style: const TextStyle(
-                      fontFamily: 'Nunito Sans',
+                    style: GoogleFonts.nunitoSans(
                       fontSize: 15,
                       fontWeight: FontWeight.w700,
-                      color: Color(0xFF1E293B),
+                      color: const Color(0xFF1E293B),
                     ),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
                   const SizedBox(height: 2),
-                  const Text(
+                  Text(
                     'Dosya başarıyla indirildi',
-                    style: TextStyle(
-                      fontFamily: 'Nunito Sans',
+                    style: GoogleFonts.nunitoSans(
                       fontSize: 12,
-                      color: Color(0xFF64748B),
+                      color: const Color(0xFF64748B),
                     ),
                   ),
                 ],
@@ -396,18 +395,17 @@ class _WebViewScreenState extends State<WebViewScreen> {
                   ),
                   child: const Icon(Icons.folder_copy_rounded, color: Color(0xFF16A34A), size: 20),
                 ),
-                title: const Text(
+                title: Text(
                   "İndirilenler'e Kaydet",
-                  style: TextStyle(
-                    fontFamily: 'Nunito Sans',
+                  style: GoogleFonts.nunitoSans(
                     fontWeight: FontWeight.w600,
                     fontSize: 14,
-                    color: Color(0xFF1E293B),
+                    color: const Color(0xFF1E293B),
                   ),
                 ),
-                subtitle: const Text(
+                subtitle: Text(
                   'Cihazın İndirilenler klasörüne kaydeder',
-                  style: TextStyle(fontFamily: 'Nunito Sans', fontSize: 12, color: Color(0xFF64748B)),
+                  style: GoogleFonts.nunitoSans(fontSize: 12, color: const Color(0xFF64748B)),
                 ),
                 onTap: () async {
                   Navigator.pop(context);
@@ -425,18 +423,17 @@ class _WebViewScreenState extends State<WebViewScreen> {
                   ),
                   child: const Icon(Icons.drive_file_move_rounded, color: Color(0xFF0075FF), size: 20),
                 ),
-                title: const Text(
+                title: Text(
                   'Farklı Kaydet / Paylaş',
-                  style: TextStyle(
-                    fontFamily: 'Nunito Sans',
+                  style: GoogleFonts.nunitoSans(
                     fontWeight: FontWeight.w600,
                     fontSize: 14,
-                    color: Color(0xFF1E293B),
+                    color: const Color(0xFF1E293B),
                   ),
                 ),
-                subtitle: const Text(
+                subtitle: Text(
                   'Dosyalar, Drive veya başka uygulamada saklayın',
-                  style: TextStyle(fontFamily: 'Nunito Sans', fontSize: 12, color: Color(0xFF64748B)),
+                  style: GoogleFonts.nunitoSans(fontSize: 12, color: const Color(0xFF64748B)),
                 ),
                 onTap: () async {
                   Navigator.pop(context);
@@ -454,28 +451,46 @@ class _WebViewScreenState extends State<WebViewScreen> {
                   ),
                   child: const Icon(Icons.open_in_new_rounded, color: Color(0xFFD97706), size: 20),
                 ),
-                title: const Text(
+                title: Text(
                   'Dosyayı Aç',
-                  style: TextStyle(
-                    fontFamily: 'Nunito Sans',
+                  style: GoogleFonts.nunitoSans(
                     fontWeight: FontWeight.w600,
                     fontSize: 14,
-                    color: Color(0xFF1E293B),
+                    color: const Color(0xFF1E293B),
                   ),
                 ),
-                subtitle: const Text(
+                subtitle: Text(
                   'Varsayılan uygulama ile açar',
-                  style: TextStyle(fontFamily: 'Nunito Sans', fontSize: 12, color: Color(0xFF64748B)),
+                  style: GoogleFonts.nunitoSans(fontSize: 12, color: const Color(0xFF64748B)),
                 ),
                 onTap: () async {
                   Navigator.pop(context);
                   try {
                     final Uri fileUri = Uri.file(savedFile.path);
-                    if (await canLaunchUrl(fileUri)) {
-                      await launchUrl(fileUri);
+                    bool opened = false;
+                    if (Platform.isAndroid && await canLaunchUrl(fileUri)) {
+                      opened = await launchUrl(fileUri);
+                    }
+                    if (!opened) {
+                      await SharePlus.instance.share(
+                        ShareParams(
+                          files: [XFile(savedFile.path)],
+                          subject: filename,
+                        ),
+                      );
                     }
                   } catch (e) {
-                    _showDownloadSnackBar('Dosya açılamadı: $filename', isSuccess: false);
+                    debugPrint("Open file error: $e");
+                    try {
+                      await SharePlus.instance.share(
+                        ShareParams(
+                          files: [XFile(savedFile.path)],
+                          subject: filename,
+                        ),
+                      );
+                    } catch (_) {
+                      _showDownloadSnackBar('Dosya açılamadı: $filename', isSuccess: false);
+                    }
                   }
                 },
               ),
@@ -549,21 +564,7 @@ class _WebViewScreenState extends State<WebViewScreen> {
            full.contains('/accounting/login');
   }
 
-  void _startLoadingTimeoutTimer() {
-    _loadingTimeoutTimer?.cancel();
-    _loadingTimeoutTimer = Timer(const Duration(seconds: 15), () async {
-      if (mounted && (_isFirstLoad || _isReloading)) {
-        setState(() {
-          _isFirstLoad = false;
-          _isReloading = false;
-        });
-      }
-    });
-  }
 
-  void _cancelLoadingTimeoutTimer() {
-    _loadingTimeoutTimer?.cancel();
-  }
 
   void _triggerNativeLogout() {
     if (_isLoggingOut) return;
@@ -833,17 +834,17 @@ class _WebViewScreenState extends State<WebViewScreen> {
                   }
                 },
                 
-                onLoadStart: (controller, url) {
-                  if (mounted && _hasTimeoutError) {
-                    setState(() => _hasTimeoutError = false);
-                  }
-                  _startLoadingTimeoutTimer(); 
+                onPermissionRequest: (controller, permissionRequest) async {
+                  return PermissionResponse(
+                    resources: permissionRequest.resources,
+                    action: PermissionResponseAction.GRANT,
+                  );
                 },
+                onLoadStart: (controller, url) {},
                 
                 onUpdateVisitedHistory: (controller, url, isReload) {
                   if (url != null && !_isLoginOrLogoutUrl(url)) {
                     if (mounted && (_isFirstLoad || _isReloading)) {
-                      _cancelLoadingTimeoutTimer();
                       setState(() {
                         _isFirstLoad = false;
                         _isReloading = false;
@@ -865,12 +866,10 @@ class _WebViewScreenState extends State<WebViewScreen> {
                       final isLogin = _isLoginOrLogoutUrl(currentUrl);
                       
                       if (!isLogin) {
-                        _cancelLoadingTimeoutTimer();
                         if (_isFirstLoad || _isReloading) {
                           setState(() {
                             _isFirstLoad = false;
                             _isReloading = false;
-                            _hasTimeoutError = false;
                           });
                         }
                       }
@@ -880,7 +879,6 @@ class _WebViewScreenState extends State<WebViewScreen> {
                 
                 onLoadStop: (controller, url) async {
                   pullToRefreshController.endRefreshing();
-                  _cancelLoadingTimeoutTimer();
 
                   try {
                     await controller.evaluateJavascript(source: """
@@ -1022,7 +1020,6 @@ class _WebViewScreenState extends State<WebViewScreen> {
                   } catch (_) {}
 
                   pullToRefreshController.endRefreshing();
-                  _cancelLoadingTimeoutTimer();
                   if (mounted && (_isFirstLoad || _isReloading)) {
                     setState(() {
                       _isFirstLoad = false;
@@ -1033,12 +1030,14 @@ class _WebViewScreenState extends State<WebViewScreen> {
                 onReceivedError: (controller, request, error) {
                   pullToRefreshController.endRefreshing();
                   if (request.isForMainFrame == true) {
-                    debugPrint("CRITICAL WEB ERROR: ${error.description}");
+                    final errDesc = error.description.toLowerCase();
+                    if (!errDesc.contains('frame load interrupted') && !errDesc.contains('err_aborted')) {
+                      debugPrint("WEB ERROR: ${error.description}");
+                    }
                     if (mounted) {
                       setState(() {
                         _isFirstLoad = false;
                         _isReloading = false;
-                        _hasTimeoutError = true;
                       });
                     }
                   }
@@ -1050,7 +1049,7 @@ class _WebViewScreenState extends State<WebViewScreen> {
 
 
 
-              if (!_hasInternet || _hasTimeoutError)
+              if (!_hasInternet)
                 Container(
                   color: Colors.white,
                   width: double.infinity,
@@ -1062,22 +1061,20 @@ class _WebViewScreenState extends State<WebViewScreen> {
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           Icon(
-                            !_hasInternet ? Icons.wifi_off_rounded : Icons.timer_off_rounded, 
+                            Icons.wifi_off_rounded, 
                             size: 72, 
-                            color: Colors.grey.shade400
+                            color: Colors.grey.shade400,
                           ),
                           const SizedBox(height: 16),
                           Text(
-                            !_hasInternet ? 'İnternet Bağlantısı Yok' : 'Bağlantı Zaman Aşımı',
-                            style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Color(0xFF334155)),
+                            'İnternet Bağlantısı Yok',
+                            style: GoogleFonts.nunitoSans(fontSize: 20, fontWeight: FontWeight.bold, color: const Color(0xFF334155)),
                           ),
                           const SizedBox(height: 10),
                           Text(
-                            !_hasInternet 
-                                ? 'Lütfen internet bağlantınızı kontrol edip tekrar deneyin.'
-                                : 'Sunucu yanıt vermedi veya sayfa yüklemesi çok uzun sürdü. Lütfen oturumunuzu tazeleyin.',
+                            'Lütfen internet bağlantınızı kontrol edip tekrar deneyin.',
                             textAlign: TextAlign.center,
-                            style: TextStyle(color: Colors.grey.shade600, height: 1.4, fontSize: 15),
+                            style: GoogleFonts.nunitoSans(color: Colors.grey.shade600, height: 1.4, fontSize: 15),
                           ),
                           const SizedBox(height: 30),
                           SizedBox(
@@ -1092,7 +1089,7 @@ class _WebViewScreenState extends State<WebViewScreen> {
                                 elevation: 0,
                               ),
                               icon: const Icon(Icons.login_rounded, size: 22),
-                              label: const Text('Yeniden Giriş Yap', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                              label: Text('Yeniden Giriş Yap', style: GoogleFonts.nunitoSans(fontWeight: FontWeight.bold, fontSize: 16)),
                             ),
                           ),
                         ],
@@ -1135,8 +1132,7 @@ class _WebViewScreenState extends State<WebViewScreen> {
                               Expanded(
                                 child: Text(
                                   'Dosya İndiriliyor: $_downloadingFileName',
-                                  style: const TextStyle(
-                                    fontFamily: 'Nunito Sans',
+                                  style: GoogleFonts.nunitoSans(
                                     color: Colors.white,
                                     fontSize: 14,
                                     fontWeight: FontWeight.w700,
