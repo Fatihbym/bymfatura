@@ -237,6 +237,9 @@ class _WebViewScreenState extends State<WebViewScreen> {
       if (Platform.isAndroid) {
         if (await Permission.storage.isGranted) return true;
         final status = await Permission.storage.request();
+        if (status.isPermanentlyDenied) {
+          openAppSettings();
+        }
         return status.isGranted;
       }
     } catch (e) {
